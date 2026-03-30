@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/Inter/Inter-VariableFont_opsz\,wght.ttf') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'jetBrains';
+  src: url('../fonts/jet/JetBrainsMono-VariableFont_wght.ttf') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+}
+
+:root {
+  --primary: #092b5a;
+  --secondary: #09738a;
+  --accent: #78a890;
+  --soft: #9ed1b7;
+  --light: #f0f0f0;
+}
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    background-color: var(--primary);
+}

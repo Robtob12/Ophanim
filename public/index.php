@@ -21,7 +21,7 @@
                 <a class="a_capsula" href="">LinkedIn</a>
             </div>
             <div class="login">
-                <a href="#">Entrar</a>
+                <a href="register.php">Entrar</a>
             </div>
         </div>
     </nav>
