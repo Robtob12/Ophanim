@@ -8,8 +8,8 @@
 </head>
 <body>
     <nav>
-        <a href="index.php">
-            <img src="image/icon.png" alt="" class="icon">
+        <a class="icon" href="index.php">
+            <h2>< Ophanim ></h2>
         </a>
 
         <div class="links">

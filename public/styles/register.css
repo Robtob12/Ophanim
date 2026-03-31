@@ -20,6 +20,31 @@
   --light: #f0f0f0;
 }
 
+.hoverLink{
+    opacity: 0;
+    transition: opacity 0.1s ease-in-out;
+}
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1,h2,h3{
+    font-family: 'Poppins', sans-serif;
+    padding: 0  20px;
+}
+
+p{
+    font-family: 'Inter';
+    padding: 0 20px;
+}
+
+a, label{
+    text-decoration: none;
+    font-family: 'jetBrains';
+}
+
 *{
     margin: 0;
     padding: 0;
@@ -28,4 +53,118 @@
 
 body{
     background-color: var(--primary);
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+     position: relative;
+}
+
+.divisor{
+  transition: 0.3s ease;
+  width: 80%;
+  height: 80%;
+  background-color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+  position: absolute;
+  
+}
+
+img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0 10px 10px 0;
+}
+
+.box1{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  width: 70%;
+  height: 100%;
+  padding: 10px;
+}
+
+.cart{
+  width: 80%;
+  height: 80%;
+  background-color: #156bff;
+  position: absolute;
+  z-index: 1;
+  position: absolute;
+    transform: translate(-30px, 30px);
+    border-radius: 10px;
+}
+
+
+.icon{
+  color: #156bff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+form{
+  width: 100%;
+  height: 60%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+
+  label{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    input{
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px #156bff solid;
+      outline: none;
+    }
+  }
+
+  input[type=submit]{
+    padding: 10px;
+    width: 100%;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    background-color: #156bff;
+    color: white;
+    font-weight: bolder;
+  }
+
+  input[type=submit]:hover{
+    cursor: pointer;
+    background-color: #092b5a;
+  }
+
+  .login{
+    text-align: center;
+    font-size: 15px;
+  }
+}
+.btn_volver{
+  color: white;
+  background-color: var(--primary);
+  padding: 5px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.error{
+  width: max-content;
+  padding: 0 20px;
+  color:red;
 }
