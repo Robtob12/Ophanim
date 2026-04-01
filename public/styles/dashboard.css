@@ -1,0 +1,252 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;300;400;600;800&display=swap');
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/Inter/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'jetBrains';
+  src: url('../fonts/jet/JetBrainsMono-VariableFont_wght.ttf') format('truetype');
+}
+
+/* 🎨 VARIABLES */
+:root {
+  --primary: #156bff;
+  --darkPrimary: #0e3b87;
+  --dark: #081d42;
+  --secondary: #09738a;
+  --accent: #78a890;
+  --darkAccent: #123d81;
+  --soft: #1b4fa8;
+  --light: #f0f0f0;
+}
+
+/* RESET */
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1,h2,h3,span{ font-family: 'Poppins'; font-weight: bolder;}
+p, summary,th,td{ font-family: 'Inter';}
+a, label{ text-decoration: none; font-family: 'jetBrains'; font-weight: bolder;}
+
+/* LAYOUT */
+body{
+    width: 100vw;
+    height: 100vh;
+    background: var(--primary);
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+}
+
+.menu{
+    width: 20%;
+    height: 100%;
+    background: var(--light);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+}
+
+.actionbox{
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(180deg, #f6f8fc 0%, #edf2fb 100%);
+    padding: 20px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* USER */
+.user{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+.icon{
+    color: var(--primary);
+}
+.user .usericon{
+    display: flex;
+    padding: 5px;
+    border-radius: 50%;
+    background: var(--darkPrimary);
+}
+
+/* CONECTIONS */
+.divisor{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.conections details{
+    background: var(--darkPrimary);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.conections summary{
+    color: white;
+    font-weight: bold;
+}
+
+.add_c{
+    background: var(--primary);
+    padding: 8px;
+    border-radius: 10px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+}
+
+/* DB + TABLES */
+.db, .tables{
+    background: var(--darkPrimary);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.db summary, .tables summary{
+    color: white;
+    font-weight: bold;
+}
+
+ul{ list-style: none; }
+
+ul li a{
+    color: white;
+    margin-left: 15px;
+}
+
+/* TOOLBAR */
+.toolbar{
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 10px 30px rgba(8,29,66,0.08);
+}
+
+.toolbar-left, .toolbar-right{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* BADGES */
+.context-badge{
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #e9effc;
+    font-size: 12px;
+}
+
+.context-badge.active{
+    background: var(--primary);
+    color: white;
+}
+
+/* BOTONES */
+.tool-btn{
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--dark);
+    color: white;
+    font-size: 12px;
+    transition: 0.2s;
+}
+
+.tool-btn:hover{
+    background: var(--darkPrimary);
+    transform: translateY(-1px);
+}
+
+/* SUMMARY */
+.summary-panel{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+    gap: 10px;
+}
+
+.summary-card{
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.summary-label{
+    font-size: 11px;
+    color: gray;
+}
+
+.summary-card h3{
+    font-size: 16px;
+}
+
+/* TABLA */
+.table-wrap{
+    background: var(--light);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.table-head{
+    padding: 12px;
+    border-bottom: 1px solid #8e8e8e;
+}
+
+.data-table{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th{
+    background: rgb(57, 123, 199);
+    padding: 10px;
+    font-size: 12px;
+    color: var(--dark);
+}
+
+.data-table td{
+    padding: 10px;
+    border: 1px solid #c1c1c1;
+    font-size: 12px;
+}
+
+.data-table tr:hover{
+    background: #f8fbff;
+}
+
+/* EMPTY */
+.empty-state{
+    padding: 30px;
+    text-align: center;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px){
+    .menu{ width: 30%; }
+    .actionbox{ width: 70%; }
+
+    .toolbar{
+        flex-direction: column;
+    }
+
+    .tool-btn{
+        width: 100%;
+    }
+}
