@@ -94,7 +94,7 @@ if ($db_selected) {
     <div class="back">
         <div class="cart"></div>
         <div class="create_table">
-            <h1>Crear nueva tabla</h1>
+            <h1>Crear nueva tabla <a href="dashboard.php" class="btn_volver">Volver</a></h1>
             <p>Define la estructura de tu tabla: columnas, tipos de datos y reglas</p>
 
             <form action="../config/create_table.php" method="post">

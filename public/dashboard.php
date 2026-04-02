@@ -119,7 +119,12 @@ if($db_selected && $conection){                     # SI EXISTE UN BANCO SELECIO
                 </summary>
                 <ul>
                 <?php foreach($conexiones as $con): ?>
-                    <li><a href="../config/conectarConexion.php?id=<?php echo $con["id"] ?>"><?php echo $con["name"] ?></a></li>
+                    <li class="conexion_link">
+                        <a href="../config/conectarConexion.php?id=<?php echo $con["id"] ?>"><?php echo $con["name"] ?></a>
+                        <a href="delete_conexion.php?id=<?php echo $con["id"] ?>"onclick="return confirm('Eliminar conexión?')">
+                            <img src="image/delete.svg" alt="">
+                        </a>
+                    </li>
                 <?php endforeach?>
                 </ul>
             </details>
@@ -132,10 +137,18 @@ if($db_selected && $conection){                     # SI EXISTE UN BANCO SELECIO
             <div class="dbs">
                 <ul>
                 <?php foreach($bancos as $db): ?>
-                    <li>
+                    <li class="db_link">
                         <a href="../config/conectarBanco.php?name=<?php echo urlencode($db['Database']); ?>">
                             <?php echo $db['Database']; ?>
                         </a>
+                        <div class="edits">
+                            <a href="delete_database.php?name=<?php echo urlencode($db['Database']); ?>" onclick="return confirm('Eliminar base de datos?')">
+                                <img src="image/delete.svg" alt="">
+                            </a>
+                            <a href="#"></a>
+                                <img src="image/edit.svg" alt="">
+                            </a>
+                        </div>
                     </li>
                 <?php endforeach; ?>
                 </ul>
@@ -148,10 +161,18 @@ if($db_selected && $conection){                     # SI EXISTE UN BANCO SELECIO
             <?php if($db_selected): ?>
                     <ul>
                         <?php foreach($tablas as $tabla): ?>
-                            <li>
+                            <li class="table_link">
                                 <a href="view_table.php?table=<?php echo urlencode($tabla[0]); ?>">
                                     <?php echo $tabla[0]; ?>
                                 </a>
+                                <div class="edits">
+                                    <a href="delete_table.php?table=<?php echo urlencode($tabla[0]); ?>" onclick="return confirm('Eliminar tabla?')">
+                                        <img src="image/delete.svg" alt="">
+                                    </a>
+                                    <a href="#">
+                                        <img src="image/edit.svg" alt="">
+                                    </a>
+                                </div>
                             </li>
                         <?php endforeach; ?>
                     </ul>

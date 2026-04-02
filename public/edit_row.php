@@ -2,91 +2,61 @@
 session_start();
 require_once "../db/conect.php";
 
-// 🔐 Validaciones básicas
-if (!isset($_SESSION['user']) || $_SESSION['user']['newUser'] === true) {
-    header("location: create_conection.php");
-    exit;
-}
-
-if (!isset($_SESSION['server']) || !isset($_SESSION['db'])) {
-    header("location: dashboard.php");
-    exit;
-}
-
-// 📡 Datos base
 $server = $_SESSION['server'];
-$db_selected = $_SESSION['db'];
-$table = $_GET['table'] ?? null;
+$db = $_SESSION['db'];
+$table = preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['table']);
+$id = $_GET['id'];
 
-// 🔐 Seguridad
-$table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-$db_selected = preg_replace('/[^a-zA-Z0-9_]/', '', $db_selected);
+// conexión
+$conection = new PDO(
+    "mysql:host={$server['host']};dbname={$db}",
+    $server['usuario'],
+    openssl_decrypt($server['password'], "AES-128-ECB", "ophanim_secret")
+);
 
-// 🔌 Conexión (UNA SOLA VEZ)
-try {
-    $conection = new PDO(
-        "mysql:host={$server['host']};dbname={$db_selected}",
-        $server['usuario'],
-        openssl_decrypt($server['password'], "AES-128-ECB", "ophanim_secret")
-    );
-    $conection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Error de conexión");
-}
-
-// 📊 Obtener datos de tabla
-$rows = [];
-$columns = [];
-$table_count = 0;
-
-if ($table) {
-    try {
-        // datos
-        $stmt = $conection->prepare("SELECT * FROM `$table` LIMIT 50");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // columnas
-        $stmtCols = $conection->prepare("DESCRIBE `$table`");
-        $stmtCols->execute();
-        $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
-
-        // count
-        $stmtCount = $conection->prepare("SELECT COUNT(*) as total FROM `$table`");
-        $stmtCount->execute();
-        $table_count = (int)$stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
-
-    } catch (PDOException $e) {
-        $rows = [];
-    }
-}
-
-// 📡 Conexiones del usuario
-$sql = "SELECT * FROM conexiones WHERE user_id = :user_id";
-$prepara = $Ophanim->prepare($sql);
-$prepara->execute([':user_id' => $_SESSION['user']['id']]);
-$conexiones = $prepara->fetchAll(PDO::FETCH_ASSOC);
-
-// 🗄️ Bases de datos
-$stmt = $conection->prepare("SHOW DATABASES");
+// columnas
+$stmt = $conection->prepare("DESCRIBE `$table`");
 $stmt->execute();
-$bancos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 📁 Tablas
-$tablas = [];
-if ($db_selected) {
-    $stmt = $conection->prepare("SHOW TABLES FROM `$db_selected`");
-    $stmt->execute();
-    $tablas = $stmt->fetchAll(PDO::FETCH_NUM);
-}
-
-$primary_key = null;
-
+// PK
+$pk = null;
 foreach ($columns as $col) {
     if ($col['Key'] === 'PRI') {
-        $primary_key = $col['Field'];
-        break;
+        $pk = $col['Field'];
     }
+}
+
+// obtener datos actuales
+$stmt = $conection->prepare("SELECT * FROM `$table` WHERE `$pk` = :id");
+$stmt->execute([':id' => $id]);
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
+$error = "";
+
+// UPDATE
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $fields = [];
+    $values = [];
+
+    foreach ($columns as $col) {
+        $name = $col['Field'];
+
+        if ($name === $pk) continue;
+
+        $fields[] = "`$name` = :$name";
+        $values[":$name"] = $_POST[$name];
+    }
+
+    $values[":id"] = $id;
+
+    $sql = "UPDATE `$table` SET " . implode(",", $fields) . " WHERE `$pk` = :id";
+
+    $stmt = $conection->prepare($sql);
+    $stmt->execute($values);
+
+    header("Location: view_table.php?table=" . urlencode($table));
+    exit;
 }
 ?>
 
@@ -99,6 +69,86 @@ foreach ($columns as $col) {
     <link rel="stylesheet" href="styles/dashboard.css">
 </head>
 <body>
+
+<div class="back">
+    <div class="cart"></div>
+
+    <div class="create_table">
+        <h1>Editar datos 
+            <a href="view_table.php?table=<?= $table ?>" class="btn_volver">volver</a>
+        </h1>
+
+        <h2><span><?php echo $table; ?></span></h2>
+        <p>Modifica los campos del registro</p>
+
+        <?php if($error): ?>
+            <div class="alert error"><?php echo $error; ?></div>
+        <?php endif; ?>
+
+        <!-- 🧾 FORMULARIO -->
+        <form method="POST">
+
+            <div class="columns">
+
+                <?php foreach($columns as $col): ?>
+                    <?php
+                        $type = strtolower($col['Type']);
+                        $name = $col['Field'];
+
+                        // 🚫 no editar PK
+                        if ($name === $pk) continue;
+
+                        $value = $row[$name] ?? "";
+                    ?>
+
+                    <div class="column">
+
+                        <label>
+                            <?php echo $name; ?>
+                            <span class="type"><?php echo $col['Type']; ?></span>
+                        </label>
+
+                        <?php if(strpos($type, 'int') !== false): ?>
+                            <input type="number" name="<?php echo $name; ?>" 
+                                   value="<?php echo htmlspecialchars($value); ?>">
+
+                        <?php elseif(strpos($type, 'text') !== false): ?>
+                            <textarea name="<?php echo $name; ?>"><?php echo htmlspecialchars($value); ?></textarea>
+
+                        <?php elseif(strpos($type, 'date') !== false && strpos($type, 'datetime') === false): ?>
+                            <input type="date" name="<?php echo $name; ?>" 
+                                   value="<?php echo substr($value, 0, 10); ?>">
+
+                        <?php elseif(strpos($type, 'datetime') !== false): ?>
+                            <input type="datetime-local" name="<?php echo $name; ?>" 
+                                   value="<?php echo str_replace(' ', 'T', $value); ?>">
+
+                        <?php elseif(strpos($type, 'tinyint(1)') !== false): ?>
+                            <select name="<?php echo $name; ?>">
+                                <option value="1" <?php echo ($value == 1) ? 'selected' : ''; ?>>True</option>
+                                <option value="0" <?php echo ($value == 0) ? 'selected' : ''; ?>>False</option>
+                            </select>
+
+                        <?php else: ?>
+                            <input type="text" name="<?php echo $name; ?>" 
+                                   value="<?php echo htmlspecialchars($value); ?>">
+                        <?php endif; ?>
+
+                    </div>
+
+                <?php endforeach; ?>
+
+            </div>
+
+            <!-- 🚀 BOTONES -->
+            <div class="form-actions">
+                <a href="view_table.php?table=<?= $table ?>" class="btn_volver">Cancelar</a>
+                <input type="submit" value="Actualizar">
+            </div>
+
+        </form>
+    </div>
+</div>
 
 <div class="menu">
 

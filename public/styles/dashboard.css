@@ -29,7 +29,7 @@
     box-sizing: border-box;
 }
 
-h1,h2,h3,span{ font-family: 'Poppins'; font-weight: bolder;}
+h1,h2,h3,span{ font-family: 'Poppins'; font-weight: bolder; display: flex; align-items: center; justify-content: space-between;}
 p, summary,th,td{ font-family: 'Inter';}
 a, label{ text-decoration: none; font-family: 'jetBrains'; font-weight: bolder;}
 
@@ -481,5 +481,26 @@ ul li a{
 
     a{
         display: inline-block;
+    }
+}
+
+.btn_volver{
+  color: white;
+  background-color: var(--primary);
+  padding: 5px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.table_link, .db_link, .conexion_link{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .edits{
+        width: 20%;
+        display: flex;
+        align-items: center;
+        justify-content: end;
     }
 }

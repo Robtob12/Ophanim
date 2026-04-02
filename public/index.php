@@ -58,7 +58,7 @@ session_destroy();
                 <a class="btn1" href="">
                     <span class="hoverLink"> < </span> Probar ahora! <span class="hoverLink"> > </span>
                 </a>
-                <a class="btn2" href="">
+                <a class="btn2" href="login.php">
                     <span class="hoverLink"> < </span> Hacer login <span class="hoverLink"> > </span>
                 </a>
             </div>

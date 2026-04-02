@@ -2,7 +2,7 @@
 session_start();
 require_once "../db/conect.php";
 
-// 🔐 Validaciones básicas
+// 🔐 Validaciones
 if (!isset($_SESSION['user']) || $_SESSION['user']['newUser'] === true) {
     header("location: create_conection.php");
     exit;
@@ -13,16 +13,20 @@ if (!isset($_SESSION['server']) || !isset($_SESSION['db'])) {
     exit;
 }
 
-// 📡 Datos base
+// 📡 Datos
 $server = $_SESSION['server'];
 $db_selected = $_SESSION['db'];
-$table = $_GET['table'] ?? null;
+$table = $_GET['table'] ?? "";
 
 // 🔐 Seguridad
 $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
 $db_selected = preg_replace('/[^a-zA-Z0-9_]/', '', $db_selected);
 
-// 🔌 Conexión (UNA SOLA VEZ)
+if (!$table) {
+    die("Tabla no válida");
+}
+
+// 🔌 Conexión
 try {
     $conection = new PDO(
         "mysql:host={$server['host']};dbname={$db_selected}",
@@ -34,71 +38,140 @@ try {
     die("Error de conexión");
 }
 
-// 📊 Obtener datos de tabla
-$rows = [];
-$columns = [];
-$table_count = 0;
-
-if ($table) {
-    try {
-        // datos
-        $stmt = $conection->prepare("SELECT * FROM `$table` LIMIT 50");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // columnas
-        $stmtCols = $conection->prepare("DESCRIBE `$table`");
-        $stmtCols->execute();
-        $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
-
-        // count
-        $stmtCount = $conection->prepare("SELECT COUNT(*) as total FROM `$table`");
-        $stmtCount->execute();
-        $table_count = (int)$stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
-
-    } catch (PDOException $e) {
-        $rows = [];
-    }
-}
-
-// 📡 Conexiones del usuario
-$sql = "SELECT * FROM conexiones WHERE user_id = :user_id";
-$prepara = $Ophanim->prepare($sql);
-$prepara->execute([':user_id' => $_SESSION['user']['id']]);
-$conexiones = $prepara->fetchAll(PDO::FETCH_ASSOC);
-
-// 🗄️ Bases de datos
-$stmt = $conection->prepare("SHOW DATABASES");
+// 📊 Estructura
+$stmt = $conection->prepare("DESCRIBE `$table`");
 $stmt->execute();
-$bancos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 📁 Tablas
-$tablas = [];
-if ($db_selected) {
-    $stmt = $conection->prepare("SHOW TABLES FROM `$db_selected`");
-    $stmt->execute();
-    $tablas = $stmt->fetchAll(PDO::FETCH_NUM);
-}
-
-$primary_key = null;
+// 🧹 Filtrar columnas insertables
+$insertable_columns = [];
 
 foreach ($columns as $col) {
-    if ($col['Key'] === 'PRI') {
-        $primary_key = $col['Field'];
-        break;
+    if (strpos($col['Extra'], 'auto_increment') === false) {
+        $insertable_columns[] = $col;
     }
 }
-?>
 
+// 🚀 INSERT
+$success = false;
+$error = "";
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $fields = [];
+    $placeholders = [];
+    $values = [];
+
+    foreach ($insertable_columns as $col) {
+        $name = $col['Field'];
+
+        if (isset($_POST[$name]) && $_POST[$name] !== "") {
+            $fields[] = "`$name`";
+            $placeholders[] = ":$name";
+            $values[":$name"] = $_POST[$name];
+        }
+    }
+
+    if (!empty($fields)) {
+        try {
+            $sql = "INSERT INTO `$table` (" . implode(",", $fields) . ")
+                    VALUES (" . implode(",", $placeholders) . ")";
+
+            $stmt = $conection->prepare($sql);
+            $stmt->execute($values);
+
+            $success = true;
+
+        } catch (PDOException $e) {
+            $error = "Error al insertar datos";
+        }
+    } else {
+        $error = "No hay datos para insertar";
+    }
+}
+
+if($success){
+    header("Location: view_table.php?table=" . urlencode($table));
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ophanim Dashboard</title>
+    <title>Insertar Datos</title>
     <link rel="stylesheet" href="styles/dashboard.css">
 </head>
 <body>
+
+<div class="back">
+    <div class="cart"></div>
+
+    <div class="create_table">
+        <h1>Insertar datos en <a href="view_table.php?table=<?= $table?>" class="btn_volver">volver</a></h1>
+        <h2><span><?php echo $table; ?></span></h2>
+        <p>Completa los campos para agregar un nuevo registro</p>
+
+        <?php if($error): ?>
+            <div class="alert error"><?php echo $error; ?></div>
+        <?php endif; ?>
+
+        <!-- 🧾 FORMULARIO -->
+        <form method="POST">
+
+            <div class="columns">
+
+                <?php foreach($insertable_columns as $col): ?>
+                    <?php
+                        $type = strtolower($col['Type']);
+                        $name = $col['Field'];
+                    ?>
+
+                    <div class="column">
+
+                        <label>
+                            <?php echo $name; ?>
+                            <span class="type"><?php echo $col['Type']; ?></span>
+                        </label>
+
+                        <?php if(strpos($type, 'int') !== false): ?>
+                            <input type="number" name="<?php echo $name; ?>">
+
+                        <?php elseif(strpos($type, 'text') !== false): ?>
+                            <textarea name="<?php echo $name; ?>"></textarea>
+
+                        <?php elseif(strpos($type, 'date') !== false): ?>
+                            <input type="date" name="<?php echo $name; ?>">
+
+                        <?php elseif(strpos($type, 'datetime') !== false): ?>
+                            <input type="datetime-local" name="<?php echo $name; ?>">
+
+                        <?php elseif(strpos($type, 'tinyint(1)') !== false): ?>
+                            <select name="<?php echo $name; ?>">
+                                <option value="1">True</option>
+                                <option value="0">False</option>
+                            </select>
+
+                        <?php else: ?>
+                            <input type="text" name="<?php echo $name; ?>">
+                        <?php endif; ?>
+
+                    </div>
+
+                <?php endforeach; ?>
+
+            </div>
+
+            <!-- 🚀 BOTONES -->
+            <div class="form-actions">
+                <a href="dashboard.php" class="btn_volver">Cancelar</a>
+                <input type="submit" value="Insertar">
+            </div>
+
+        </form>
+    </div>
+</div>
 
 <div class="menu">
 
@@ -236,17 +309,8 @@ foreach ($columns as $col) {
                             <?php foreach($row as $value): ?>
                                 <td><?php echo htmlspecialchars($value); ?></td>
                             <?php endforeach; ?>
-                            <td class="delete">
-                                <a href="delete_row.php?table=<?php echo urlencode($table); ?>&id=<?php echo $row[$primary_key]; ?>"
-                                onclick="return confirm('¿Eliminar este registro?')">
-                                    <img src="image/delete.svg" alt="">
-                                </a>
-                            </td>
-                            <td class="edit">
-                                <a href="edit_row.php?table=<?php echo urlencode($table); ?>&id=<?php echo $row[$primary_key]; ?>">
-                                    <img src="image/edit.svg" alt="">
-                                </a>
-                            </td>
+                            <td class="delete"><a href=""> <img src="image/delete.svg" alt=""></a></td>
+                            <td class="edit"><a href=""> <img src="image/edit.svg" alt=""></a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -262,6 +326,5 @@ foreach ($columns as $col) {
     </div>
 
 </div>
-
 </body>
 </html>

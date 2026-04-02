@@ -2,7 +2,7 @@
 session_start();
 require_once "../db/conect.php";
 
-// 🔐 Validaciones básicas
+// 🔐 Validaciones
 if (!isset($_SESSION['user']) || $_SESSION['user']['newUser'] === true) {
     header("location: create_conection.php");
     exit;
@@ -13,16 +13,17 @@ if (!isset($_SESSION['server']) || !isset($_SESSION['db'])) {
     exit;
 }
 
-// 📡 Datos base
+// 📡 Datos
 $server = $_SESSION['server'];
 $db_selected = $_SESSION['db'];
-$table = $_GET['table'] ?? null;
+$table = $_GET['table'] ?? "";
 
 // 🔐 Seguridad
 $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-$db_selected = preg_replace('/[^a-zA-Z0-9_]/', '', $db_selected);
 
-// 🔌 Conexión (UNA SOLA VEZ)
+if (!$table) die("Tabla inválida");
+
+// 🔌 Conexión
 try {
     $conection = new PDO(
         "mysql:host={$server['host']};dbname={$db_selected}",
@@ -31,75 +32,162 @@ try {
     );
     $conection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Error de conexión");
+    die("Error conexión");
 }
 
-// 📊 Obtener datos de tabla
-$rows = [];
-$columns = [];
-$table_count = 0;
-
-if ($table) {
-    try {
-        // datos
-        $stmt = $conection->prepare("SELECT * FROM `$table` LIMIT 50");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // columnas
-        $stmtCols = $conection->prepare("DESCRIBE `$table`");
-        $stmtCols->execute();
-        $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
-
-        // count
-        $stmtCount = $conection->prepare("SELECT COUNT(*) as total FROM `$table`");
-        $stmtCount->execute();
-        $table_count = (int)$stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
-
-    } catch (PDOException $e) {
-        $rows = [];
-    }
-}
-
-// 📡 Conexiones del usuario
-$sql = "SELECT * FROM conexiones WHERE user_id = :user_id";
-$prepara = $Ophanim->prepare($sql);
-$prepara->execute([':user_id' => $_SESSION['user']['id']]);
-$conexiones = $prepara->fetchAll(PDO::FETCH_ASSOC);
-
-// 🗄️ Bases de datos
-$stmt = $conection->prepare("SHOW DATABASES");
+// 📊 Columnas actuales
+$stmt = $conection->prepare("DESCRIBE `$table`");
 $stmt->execute();
-$bancos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 📁 Tablas
-$tablas = [];
-if ($db_selected) {
-    $stmt = $conection->prepare("SHOW TABLES FROM `$db_selected`");
-    $stmt->execute();
-    $tablas = $stmt->fetchAll(PDO::FETCH_NUM);
-}
+// 🚀 ALTER TABLE
+$success = false;
+$error = "";
 
-$primary_key = null;
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-foreach ($columns as $col) {
-    if ($col['Key'] === 'PRI') {
-        $primary_key = $col['Field'];
-        break;
+    $queries = [];
+
+    // 🔁 MODIFICAR / ELIMINAR
+    foreach ($_POST['old_name'] as $i => $old_name) {
+
+        $new_name = $_POST['name'][$i];
+        $type = $_POST['type'][$i];
+        $null = isset($_POST['null'][$i]) ? "NULL" : "NOT NULL";
+        $default = $_POST['default'][$i];
+
+        // eliminar
+        if (isset($_POST['delete']) && in_array($old_name, $_POST['delete'])) {
+            $queries[] = "DROP COLUMN `$old_name`";
+            continue;
+        }
+
+        // modificar
+        $sql = "CHANGE `$old_name` `$new_name` $type $null";
+
+        if ($default !== "") {
+            $sql .= " DEFAULT '$default'";
+        }
+
+        $queries[] = $sql;
+    }
+
+    // ➕ NUEVAS COLUMNAS
+    if (!empty($_POST['new_name'])) {
+        foreach ($_POST['new_name'] as $i => $name) {
+
+            $type = $_POST['new_type'][$i];
+
+            if ($name && $type) {
+                $queries[] = "ADD COLUMN `$name` $type";
+            }
+        }
+    }
+
+    // 🧱 Ejecutar
+    if (!empty($queries)) {
+        try {
+            $sql = "ALTER TABLE `$table` " . implode(", ", $queries);
+            $stmt = $conection->prepare($sql);
+            $stmt->execute();
+
+            $success = true;
+
+        } catch (PDOException $e) {
+            $error = "Error al modificar tabla";
+        }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ophanim Dashboard</title>
+    <title>Alterar Tabla</title>
     <link rel="stylesheet" href="styles/dashboard.css">
 </head>
 <body>
 
+<div class="back">
+    <div class="cart"></div>
+
+    <div class="create_table">
+        <h1>Alterar tabla <a href="view_table.php?table=<?php echo $table; ?>" class="btn_volver">Volver</a></h1>
+        <h2><span><?php echo $table; ?></span> </h2>
+        <p>Modifica la estructura de la tabla</p>
+
+        <?php if($success): ?>
+            <div class="alert success">Tabla modificada correctamente</div>
+        <?php endif; ?>
+
+        <?php if($error): ?>
+            <div class="alert error"><?php echo $error; ?></div>
+        <?php endif; ?>
+
+        <form method="POST">
+
+            <h3>Columnas actuales</h3>
+
+            <div class="columns">
+
+                <?php foreach($columns as $i => $col): ?>
+                <div class="column">
+
+                    <input type="hidden" name="old_name[]" value="<?php echo $col['Field']; ?>">
+
+                    <!-- nombre -->
+                    <input type="text" name="name[]" value="<?php echo $col['Field']; ?>">
+
+                    <!-- tipo -->
+                    <input type="text" name="type[]" value="<?php echo $col['Type']; ?>">
+
+                    <!-- NULL -->
+                    <label>
+                        <input type="checkbox" name="null[<?php echo $i; ?>]"
+                        <?php echo ($col['Null'] === 'YES') ? 'checked' : ''; ?>>
+                        NULL
+                    </label>
+
+                    <!-- DEFAULT -->
+                    <input type="text" name="default[]" 
+                        value="<?php echo $col['Default']; ?>" placeholder="DEFAULT">
+
+                    <!-- eliminar -->
+                    <label>
+                        <input type="checkbox" name="delete[]" value="<?php echo $col['Field']; ?>">
+                        Eliminar
+                    </label>
+
+                </div>
+                <?php endforeach; ?>
+
+            </div>
+
+            <!-- ➕ NUEVAS COLUMNAS -->
+            <h3>Nuevas columnas</h3>
+
+            <div id="newColumns">
+
+                <div class="column new-col">
+                    <input type="text" name="new_name[]" placeholder="nombre">
+                    <input type="text" name="new_type[]" placeholder="tipo">
+
+                    <button type="button" class="removeColumn">❌</button>
+                </div>
+
+            </div>
+
+            <button type="button" id="addColumn">+ Agregar columna</button>
+
+            <!-- 🚀 -->
+            <div class="form-actions">
+                <input type="submit" value="Guardar cambios">
+            </div>
+
+        </form>
+    </div>
+</div>
 <div class="menu">
 
     <div class="user">
@@ -236,17 +324,8 @@ foreach ($columns as $col) {
                             <?php foreach($row as $value): ?>
                                 <td><?php echo htmlspecialchars($value); ?></td>
                             <?php endforeach; ?>
-                            <td class="delete">
-                                <a href="delete_row.php?table=<?php echo urlencode($table); ?>&id=<?php echo $row[$primary_key]; ?>"
-                                onclick="return confirm('¿Eliminar este registro?')">
-                                    <img src="image/delete.svg" alt="">
-                                </a>
-                            </td>
-                            <td class="edit">
-                                <a href="edit_row.php?table=<?php echo urlencode($table); ?>&id=<?php echo $row[$primary_key]; ?>">
-                                    <img src="image/edit.svg" alt="">
-                                </a>
-                            </td>
+                            <td class="delete"><a href=""> <img src="image/delete.svg" alt=""></a></td>
+                            <td class="edit"><a href=""> <img src="image/edit.svg" alt=""></a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -262,6 +341,8 @@ foreach ($columns as $col) {
     </div>
 
 </div>
+
+<script src="../config/add_columns_alter.js"></script>
 
 </body>
 </html>
