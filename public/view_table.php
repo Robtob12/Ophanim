@@ -217,6 +217,7 @@ if ($db_selected) {
                         <?php foreach(array_keys($rows[0]) as $col): ?>
                             <th><?php echo $col; ?></th>
                         <?php endforeach; ?>
+                        <th colspan="2">EDITOR</th>
                     </tr>
                 </thead>
 
@@ -226,11 +227,14 @@ if ($db_selected) {
                             <?php foreach($row as $value): ?>
                                 <td><?php echo htmlspecialchars($value); ?></td>
                             <?php endforeach; ?>
+                            <td class="delete"><a href=""> <img src="image/delete.svg" alt=""></a></td>
+                            <td class="edit"><a href=""> <img src="image/edit.svg" alt=""></a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         <?php else: ?>
+
             <div class="empty-state">
                 <h3>No hay datos</h3>
                 <p>Selecciona una tabla</p>

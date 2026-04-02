@@ -93,6 +93,7 @@ body{
     background: var(--darkPrimary);
     padding: 10px;
     border-radius: 10px;
+    width: 80%;
 }
 
 .conections summary{
@@ -114,6 +115,8 @@ body{
     background: var(--darkPrimary);
     padding: 10px;
     border-radius: 10px;
+    max-height: 50%;
+    overflow-y: auto;
 }
 
 .db summary, .tables summary{
@@ -248,5 +251,235 @@ ul li a{
 
     .tool-btn{
         width: 100%;
+    }
+}
+
+/* OVERLAY */
+.back{
+    width: 100%;
+    height: 100%;
+    background-color: rgba(23, 23, 23, 0.568);
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* FONDO */
+.cart{
+    width: 80%;
+    height: 80%;
+    background-color: #156bff;
+
+    position: absolute;
+    z-index: 1;
+
+    transform: translate(-30px, 30px);
+    border-radius: 10px;
+}
+
+/* MODAL */
+.create_conection{
+    width: 80%;
+    height: 80%;
+    background-color: white;
+
+    border-radius: 10px;
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    padding: 30px;
+    gap: 10px;
+}
+
+/* FORM */
+.create_conection form{
+    width: 100%;
+    height: 80%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+/* LABEL */
+.create_conection form label{
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* INPUT */
+.create_conection form label input{
+    padding: 10px;
+    border: 2px solid var(--darkPrimary);
+    border-radius: 10px;
+}
+
+/* SELECT */
+.create_conection form label select{
+    padding: 10px;
+    background-color: var(--darkPrimary);
+    border: none;
+    border-radius: 10px;
+    color: white;
+}
+
+/* SUBMIT */
+.create_conection form input[type="submit"]{
+    padding: 20px;
+    border-radius: 10px;
+    border: none;
+
+    background-color: var(--darkPrimary);
+    color: white;
+    font-weight: bolder;
+}
+
+/* MODAL BASE (hereda idea de create_conection) */
+.create_table{
+    width: 80%;
+    height: 80%;
+    background-color: white;
+
+    border-radius: 10px;
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 30px;
+    gap: 15px;
+    overflow: auto;
+}
+
+/* TITULOS */
+.create_table h1{
+    color: var(--dark);
+}
+
+.create_table p{
+    color: #66758f;
+    font-size: 14px;
+}
+
+/* FORM */
+.create_table form{
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* LABEL BASE */
+.create_table label{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* INPUT */
+.create_table input{
+    padding: 10px;
+    border: 2px solid var(--darkPrimary);
+    border-radius: 10px;
+    outline: none;
+}
+
+/* SELECT */
+.create_table select{
+    padding: 10px;
+    background-color: var(--darkPrimary);
+    border: none;
+    border-radius: 10px;
+    color: white;
+}
+
+/* SECCIONES */
+.create_table h3{
+    margin-top: 10px;
+    color: var(--dark);
+}
+
+/* COLUMNAS */
+.columns{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* CADA COLUMNA */
+.column{
+    display: grid;
+    grid-template-columns: 1fr 1fr 100px;
+    gap: 10px;
+
+    background-color: var(--light);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+/* CHECKBOXES */
+.column label{
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+}
+
+/* BOTONES */
+.create_table button{
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+
+    background-color: var(--secondary);
+    color: white;
+    cursor: pointer;
+}
+
+/* SUBMIT */
+.create_table input[type="submit"]{
+    padding: 15px;
+    border-radius: 10px;
+    border: none;
+
+    background-color: var(--darkPrimary);
+    color: white;
+    font-weight: bolder;
+}
+
+/* FK */
+.fks{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fk{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+
+    background-color: var(--light);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.delete, .edit{
+    text-align: center;
+
+    a{
+        display: inline-block;
     }
 }

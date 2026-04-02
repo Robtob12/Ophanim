@@ -1,55 +1,83 @@
 <?php
+/*====================================*\ 
+[#]         CONFIGURACION            [#]
+\*====================================*/
+
+//[1] ACTIVAR SESSION
 session_start();
+
+//[2] PEDIR BANCO IMPORTANTE
 require_once "../db/conect.php";
 
+//[3] SI EL USUARIO EXISTE Y ES NUEVO QUE CREÈ SU PRIMERA CONEXION
 if (!isset($_SESSION['user']) || $_SESSION['user']['newUser'] === true) {
     header("location: create_conection.php");
     exit;
 }
 
-//OBTENER CONEXIONES DE USUARIO EXISTENTE
+
+/*====================================*\ 
+[#]       OBTENCION DE DATOS         [#]
+\*====================================*/
+
+//[1] OBTENER CONEXIONES DEL USUARIO EXISTENTE
 $sql = "SELECT * FROM conexiones WHERE user_id = :user_id";
 $prepara = $Ophanim->prepare($sql);
 $prepara->execute([':user_id' => $_SESSION['user']['id']]);
 $conexiones = $prepara->fetchAll(PDO::FETCH_ASSOC);
 
-//RECONSTRUIR LA CONEXION PRINCIPAL O LA QUE QUEDO
-$server = $_SESSION['server'];
+//[2] RECONSTRUIR LA CONEXION PRINCIPAL O LA QUE QUEDO
+$server = $_SESSION['server'] ?? null;  # SI NO HAY SERVIDOR SELECIONADO ES NULL
+$conection = null;                      # LA CONEXION ES NULA POR DEFECTO PARA EVITAR ERRORES
+$connection_error = null;               # NO HAY ERRORES DE CONEXION ASTA QUE SE COMPREVE QUE HAY
 
-try {
-    $conection = new PDO(
-        "mysql:host={$server['host']};dbname={$server['database_name']}",
-        $server['usuario'],
-        openssl_decrypt($server['password'], "AES-128-ECB", "ophanim_secret")
-    );
+//[3] SI HAY CONEXION ENTONCES:
+if($server){ 
+    try {
+        // CREA LA CONEXION DEL BANCO CON
+        $conection = new PDO(                                                       # Server -> HOST
+            "mysql:host={$server['host']};dbname={$server['database_name']}",       # Server -> DBNAME si hay
+            $server['usuario'],                                                     # Server -> ROOT
+            openssl_decrypt($server['password'], "AES-128-ECB", "ophanim_secret")   # Server -> PASSWORD
+        ); 
 
-    $conection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);        # CREAR ATIRBUTOS DE LA CONEXION
 
-} catch (PDOException $e) {
-    die("Error de conexión");
+    } catch (PDOException $e) { // EN CASO DE ERROR AL CONECTAR
+        $connection_error = $e->getMessage();                   # LA CONEXION TIENE ERRORES Y SE GUARDA
+        unset($_SESSION['server']);                             # ELIMINAMOS EL SERVIDOR YA QUE NO HAY
+        $server = null;                                         # DEJAMOS EL SERVIDOR NULO ESTO ES INPORTANTE
+    }
 }
 
-//Obtener bancos del usuario
-$sql = "SHOW DATABASES";
-$prepara = $conection->prepare($sql);
-$prepara->execute();
-$bancos = $prepara->fetchAll(PDO::FETCH_ASSOC);
+//[4] OBTENER LOS BANCOS DE LA CONEXION
+$bancos = [];                                       # CREAMOS UN ARRAY PARA LOS BANCOS
 
-//OBTENER TABLAS DEL BANCO ACTUAL
-$db_selected = $_SESSION['db'] ?? null;
+if($conection){                                     # SI EL SERVIDOR ESTA FUNCIONANDO OBTENERMOS LOS BANCOS DE ESTE
+    $sql = "SHOW DATABASES";                        # CODIGO SQL PARA MOSTRAR LOS BANCOS
+    $prepara = $conection->prepare($sql);           # PREPARAMOS EL CODIGO EN EL SERVIDOR
+    $prepara->execute();                            # EJECUTAMOS EL CODIGO
+    $bancos = $prepara->fetchAll(PDO::FETCH_ASSOC); # DEVOLVEMOS EL RESULTADO EN EL ARRAY DE BANCOS
+}
 
-$tablas = [];
+//[5] OBTENER LAS TABLAS DEL BANCO SELECCIONADO
+$db_selected = $_SESSION['db'] ?? null;             # SI YA EXISTE UN BANCO SELECIONADO USAMOS SU NOMBRE
+$tablas = [];                                       # GUARDAMOS LAS TABLAS EN UN ARRAY COMO LO HICIMOS CON LOS BANCOS
 
-if($db_selected){
-    try {
-        $sql = "SHOW TABLES FROM `$db_selected`";
-        $stmt = $conection->prepare($sql);
-        $stmt->execute();
-        $tablas = $stmt->fetchAll(PDO::FETCH_NUM);
-    } catch (PDOException $e) {
+if($db_selected && $conection){                     # SI EXISTE UN BANCO SELECIONADO Y LA CONEXION FUNCIONA
+    try {                                           
+        $sql = "SHOW TABLES FROM `$db_selected`";   # CODIGO SQL PARA SELECIONAR LAS TABLAS DEL BANCO SELECIONADO
+        $stmt = $conection->prepare($sql);          # PREPARAMOS EL CODIGO EN EL SERVIDOR
+        $stmt->execute();                           # EJECUTAMOS EL CODIGO
+        $tablas = $stmt->fetchAll(PDO::FETCH_NUM);  # DEVOLVEMOS EL RESULTADO EN EL ARRAY DE TABLAS
+    } catch (PDOException $e) {                     # EN CASO DE ERRORES O DE QUE NO FUNCIONE EL COMANDO DEJAMOS LAS TABLAS VACIAS
         $tablas = [];
     }
 }
+
+/*=====================================*\
+[#] CODIGO HTML Y ESTRUCTURA DE LA UI [#]
+\*=====================================*/
 
 ?>
 <!DOCTYPE html>
@@ -61,7 +89,10 @@ if($db_selected){
     <title>Dashboard</title>
 </head>
 <body>
+    <!-- MENU LATERAL -->
     <div class="menu">
+            
+        <!-- AREA DE USUARIO -->
         <div class="user">
             <h1 class="icon">< Ophanim ></h1>
             <a class="usericon" href="perfil.php">
@@ -69,6 +100,7 @@ if($db_selected){
             </a>
         </div>
 
+        <!-- AREA DE CONEXIONES -->
         <div class="conections">
             <h2 class="categoria">Conexiones</h2>
             <div class="divisor">
@@ -78,11 +110,9 @@ if($db_selected){
             <details>
                 <summary>
                     <?php 
-                    if(empty($server['name'])){
-                        echo "Conecion Actual";
-                    }
-
-                    else{
+                    if(!$server || empty($server['name'])){
+                        echo "Sin conexión";
+                    } else {
                         echo $server['name'];
                     }
                     ?>
@@ -95,6 +125,8 @@ if($db_selected){
             </details>
             </div>
         </div>
+
+        <!-- AREA DE BANCOS-->
         <details class="db">
             <summary>Bancos</summary>
             <div class="dbs">
@@ -109,6 +141,8 @@ if($db_selected){
                 </ul>
             </div>
         </details>
+
+        <!-- AREA DE TABLAS -->
         <details class="tables">
             <summary>Tables</summary>
             <?php if($db_selected): ?>
@@ -126,22 +160,24 @@ if($db_selected){
             <?php endif; ?>
 
         </details>
+
     </div>
     
+    <!-- AREA DE ACCIONES Y HERRAMIENTAS-->
     <div class="actionbox">
 
-    <!-- 🔥 TOOLBAR -->
-    <div class="toolbar">
-        <div class="toolbar-left">
-            <span class="context-badge">DB: <?php echo $db_selected; ?></span>
-            <span class="context-badge active">Tabla: no seleccionado</span>
-        </div>
+        <!-- 🔥 TOOLBAR -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <span class="context-badge">DB: <?php echo $db_selected; ?></span>
+                <span class="context-badge active">Tabla: no seleccionado</span>
+            </div>
 
-        <div class="toolbar-right">
-            <a href="sql_console.php" class="tool-btn">SQL</a>
-            <a href="create_table.php" class="tool-btn">Crear</a>
+            <div class="toolbar-right">
+                <a href="sql_console.php" class="tool-btn">SQL</a>
+                <a href="create_table.php" class="tool-btn">Crear</a>
+            </div>
         </div>
-    </div>
 
         <!-- 📊 RESUMEN -->
         <div class="summary-panel">
@@ -166,5 +202,6 @@ if($db_selected){
             </div>
         </div>
     </div>
+
 </body>
 </html>
